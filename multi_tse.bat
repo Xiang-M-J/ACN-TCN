@@ -1,0 +1,1 @@
+python -W ignore -m src.training.train experiments/multi_tse --use_cuda --start_epoch 0
