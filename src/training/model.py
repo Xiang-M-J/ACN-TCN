@@ -46,7 +46,7 @@ class ACNTCN(nn.Module):
         self.enc, self.dec = make_enc_dec('stft', n_filters=n_fft,
                                           kernel_size=n_fft,
                                           stride=stride,
-                                          window_type=window, sample_rate=16000)
+                                          window_type=window)
 
         self.t_ksize = 3
         self.ch_dim = ch_dim
@@ -144,10 +144,10 @@ class LayerNormalizationC(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, in_channel, out_channel, n_layer, r, n_head, kernel_size, stride):
+    def __init__(self, in_channel, out_channel, n_layer, r, n_head, freq_dim, kernel_size, stride):
         super(EncoderBlock, self).__init__()
         self.tfcm = TFCM(in_channel, n_layer, r)
-        self.attn = ConvSelfAttn(in_channel, in_channel // n_head, n_head)
+        self.attn = ConvSelfAttn(in_channel, in_channel // n_head, freq_dim, n_head)
         self.freq_down = FreqDown(in_channel, out_channel, (1, kernel_size), (1, stride))
 
     def forward(self, x):
@@ -163,7 +163,7 @@ class DecoderBlock(nn.Module):
         self.fe = FeatureEnh(in_channel, freq_dim)
         self.freq_up = FreqUp(in_channel, out_channel, (1, kernel_size), (1, stride))
         self.tfcm = TFCM(out_channel, n_layer, r)
-        self.attn = ConvSelfAttn(out_channel, out_channel // n_head, n_head)
+        self.attn = ConvSelfAttn(out_channel, out_channel // n_head, freq_dim * 2 + 1, n_head)
 
     def forward(self, x1, x2):
         x = self.fe(x1, x2)
@@ -174,10 +174,10 @@ class DecoderBlock(nn.Module):
 
 
 class MiddleBlock(nn.Module):
-    def __init__(self, channel, n_layer, n_head):
+    def __init__(self, channel, n_layer, freq_dim, n_head, r):
         super(MiddleBlock, self).__init__()
-        self.tfcm = TFCM(channel, n_layer)
-        self.attn = ConvSelfAttn(channel, channel // n_head, n_head)
+        self.tfcm = TFCM(channel, n_layer, r)
+        self.attn = ConvSelfAttn(channel, channel // n_head, freq_dim, n_head)
 
     def forward(self, x):
         x = self.tfcm(x)
@@ -189,12 +189,12 @@ class MaskNet(nn.Module):
     def __init__(self, ch_dim, freq_dim, n_layer, r, n_head):
         super().__init__()
 
-        self.encoder = EncoderBlock(ch_dim, ch_dim, n_layer, r, n_head, 3, 2)
+        self.encoder = EncoderBlock(ch_dim, ch_dim, n_layer, r, n_head, freq_dim, 3, 2)
 
         self.middle = nn.Sequential(
-            MiddleBlock(ch_dim, n_layer, r),
-            MiddleBlock(ch_dim, n_layer, r),
-            MiddleBlock(ch_dim, n_layer, r),
+            MiddleBlock(ch_dim, n_layer, freq_dim // 2, n_head, r),
+            MiddleBlock(ch_dim, n_layer, freq_dim // 2, n_head, r),
+            MiddleBlock(ch_dim, n_layer, freq_dim // 2, n_head, r),
         )
 
         self.decoder = DecoderBlock(ch_dim, ch_dim, freq_dim // 2, n_layer, r, n_head, 3, 2)
@@ -279,24 +279,27 @@ class LayerNormalization4DCF(nn.Module):
 
 
 class ConvSelfAttn(nn.Module):
-    def __init__(self, d_model, embed_dim, num_heads):
+    def __init__(self, d_model, embed_dim, freq_dim, num_heads):
         super(ConvSelfAttn, self).__init__()
         self.q = nn.Sequential(
             nn.Conv2d(d_model, embed_dim * num_heads, kernel_size=1, bias=False),
             nn.ReLU(),
+            LayerNormalization4DCF((embed_dim * num_heads, freq_dim))
         )
         self.k = nn.Sequential(
             nn.Conv2d(d_model, embed_dim * num_heads, kernel_size=1, bias=False),
             nn.ReLU(),
+            LayerNormalization4DCF((embed_dim * num_heads, freq_dim))
         )
         self.v = nn.Sequential(
             nn.Conv2d(d_model, d_model, kernel_size=1, bias=False),
             nn.ReLU(),
+            LayerNormalization4DCF((embed_dim * num_heads, freq_dim))
         )
         self.o = nn.Sequential(
             nn.Conv2d(d_model, d_model, kernel_size=1),
             nn.ReLU(),
-            LayerNormalizationC(d_model)
+            LayerNormalization4DCF((embed_dim * num_heads, freq_dim))
         )
 
         self.num_heads = num_heads
@@ -384,17 +387,17 @@ class FreqUp(nn.Module):
         super(FreqUp, self).__init__()
         padding = (kernel_size[-1] - stride[-1]) // 2
 
-        self.pw = nn.Sequential(
-            nn.Conv2d(in_channel, out_channel, 1),
-            nn.PReLU(out_channel),
-        )
+        # self.pw = nn.Sequential(
+        #     nn.Conv2d(in_channel, out_channel, 1),
+        #     nn.PReLU(out_channel),
+        # )
         self.tconv = nn.Sequential(
             nn.ConvTranspose2d(in_channel, out_channel, kernel_size, stride, padding=(0, padding)),
             nn.PReLU(out_channel),
         )
 
     def forward(self, x):
-        x = self.pw(x)
+        # x = self.pw(x)
         x = self.tconv(x)
         return x
 
