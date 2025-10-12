@@ -70,3 +70,4 @@ vscode.*
 tensorboard/
 data/FSDSoundScapes/
 experiments/
+.vscode

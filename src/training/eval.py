@@ -203,7 +203,6 @@ if __name__ == '__main__':
                         help="List of GPU ids used for training. "
                              "Eg., --gpu_ids 2 4. All GPUs are used by default.")
     args = parser.parse_args()
-    args.wandb = False
 
     results = []
 

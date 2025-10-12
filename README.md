@@ -1,11 +1,13 @@
 # ACN-TCN
 
 
+We provide some audio samples here: [Audio samples](https://xiang-m-j.github.io/ACN-TCN-display/)
+
 ## Training and Evaluation
 
 ### Dataset
 
-We use [Scaper](https://github.com/justinsalamon/scaper) toolkit to synthetically generate audio mixtures. Each audio mixture is generated on-the-fly, during training or evaluation, using Scaper's `generate_from_jams` function on a [`.jams`](https://jams.readthedocs.io/en/stable/) specification file. We provide (in the step 3 below) `.jams` specification files for all training, validation and evaluation samples used in our experiments. The `.jams` specifications are generated using [FSDKaggle2018](https://zenodo.org/record/2552860) and [TAU Urban Acoustic Scenes 2019](https://dcase.community/challenge2019/task-acoustic-scene-classification) datasets as sources for foreground and background sounds, respectively. Steps to create the dataset:
+We use [Scaper](https://github.com/justinsalamon/scaper) toolkit to synthetically generate audio mixtures. Each audio mixture used in our experiments is described using a [`.jams`](https://jams.readthedocs.io/en/stable/) file . The `.jams` specifications are generated using [FSDKaggle2018](https://zenodo.org/record/2552860) and [TAU Urban Acoustic Scenes 2019](https://dcase.community/challenge2019/task-acoustic-scene-classification) datasets as sources for foreground and background sounds, respectively. Steps to create the dataset (obtained from https://github.com/vb000/Waveformer):
 
 1. Go to the `data` directory:
 
@@ -31,18 +33,41 @@ We use [Scaper](https://github.com/justinsalamon/scaper) toolkit to syntheticall
 
         unzip TAU-acoustic-sounds/\*.zip -d FSDSoundScapes/TAU-acoustic-sounds/
 
+### Preprocess
+
+This step reads the `.jams` specifications, then generates the corresponding audio list and label list, and stores them in numpy format for easy loading during training.
+
+```sh
+python preprocess.py --TAU_path xxx
+
+```
+`--TAU_path` is used to specify the path where the `TAU-urban-acoustic-scenes-2019-development` and `TAU-urban-acoustic-scenes-2019-evaluation` folders are stored.
+
+
 ### Training
 
-    python -W ignore -m src.training.train experiments/<Experiment dir with config.json> --use_cuda
+```python
+python -W ignore -m src.training.train experiments/<Experiment dir with config.json> --use_cuda
+```
 
 ### Evaluation
 
-Pretrained checkpoints are available at [experiments.zip](https://targetsound.cs.washington.edu/files/experiments.zip). These can be downloaded and uncompressed to appropriate locations using:
-
-    wget https://targetsound.cs.washington.edu/files/experiments.zip
-    unzip -o experiments.zip -d experiments
-
 Run evaluation script:
 
-    python -W ignore -m src.training.eval experiments/<Experiment dir with config.json and checkpoints> --use_cuda
+```python
+python -W ignore -m src.training.eval experiments/<Experiment dir with config.json and checkpoints> --use_cuda
+```
 
+
+### Reference
+
+```
+@misc{veluri2022realtime,
+  title={Real-Time Target Sound Extraction}, 
+  author={Bandhav Veluri and Justin Chan and Malek Itani and Tuochao Chen and Takuya Yoshioka and Shyamnath Gollakota},
+  year={2022},
+  eprint={2211.02250},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD}
+}
+```

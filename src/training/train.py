@@ -274,11 +274,8 @@ if __name__ == '__main__':
     parser.add_argument('--detect_anomaly', dest='detect_anomaly',
                         action='store_true',
                         help="Whether to use cuda")
-    parser.add_argument('--wandb', dest='wandb', action='store_true',
-                        help="Whether to sync tensorboard to wandb")
 
     args = parser.parse_args()
-    args.wandb = False
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
@@ -302,12 +299,6 @@ if __name__ == '__main__':
     # Initialize tensorboard writer
     tensorboard_dir = os.path.join(args.exp_dir, 'tensorboard')
     args.writer = SummaryWriter(tensorboard_dir, purge_step=args.start_epoch)
-    if args.wandb:
-        import wandb
-
-        wandb.init(
-            project='Semaudio', sync_tensorboard=True,
-            dir=tensorboard_dir, name=os.path.basename(args.exp_dir))
 
     exec("import %s as network" % args.model)
     logging.info("Imported the model from '%s'." % args.model)
@@ -315,5 +306,3 @@ if __name__ == '__main__':
     train(args)
 
     args.writer.close()
-    if args.wandb:
-        wandb.finish()

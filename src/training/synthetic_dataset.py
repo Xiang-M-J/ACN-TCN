@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scaper
+# import scaper
 import torch
 import torchaudio
 import torchaudio.transforms as AT
@@ -68,12 +68,12 @@ class FSDSoundScapesDataset(torch.utils.data.Dataset):  # type: ignore
         # _sr = jams['annotations'][0]['sandbox']['scaper']['sr']
         # assert _sr == sr, "Sampling rate provided does not match the data"
 
-        if resample_rate is not None:
-            self.resampler = AT.Resample(sr, resample_rate)
-            self.sr = resample_rate
-        else:
-            self.resampler = lambda a: a
-            self.sr = sr
+        # if resample_rate is not None:
+        #     self.resampler = AT.Resample(sr, resample_rate)
+        #     self.sr = resample_rate
+        # else:
+        #     self.resampler = lambda a: a
+        #     self.sr = sr
 
     def _get_label_vector(self, labels):
         """

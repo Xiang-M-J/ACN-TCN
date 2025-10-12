@@ -16,3 +16,4 @@ seaborn
 ipykernel
 scaper
 wget
+asteroid_filterbanks

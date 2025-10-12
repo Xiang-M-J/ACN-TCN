@@ -368,7 +368,6 @@ class FreqDown(nn.Module):
 class FeatureEnh(nn.Module):
     def __init__(self, channel, freq_dim):
         super(FeatureEnh, self).__init__()
-
         self.weight = nn.Sequential(
             nn.Conv2d(2 * channel, channel, 1),
             nn.Linear(freq_dim, freq_dim // 2),
@@ -387,17 +386,17 @@ class FreqUp(nn.Module):
         super(FreqUp, self).__init__()
         padding = (kernel_size[-1] - stride[-1]) // 2
 
-        # self.pw = nn.Sequential(
-        #     nn.Conv2d(in_channel, out_channel, 1),
-        #     nn.PReLU(out_channel),
-        # )
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channel, out_channel, 1),
+            nn.PReLU(out_channel)
+        )
         self.tconv = nn.Sequential(
-            nn.ConvTranspose2d(in_channel, out_channel, kernel_size, stride, padding=(0, padding)),
+            nn.ConvTranspose2d(out_channel, out_channel, kernel_size, stride, padding=(0, padding)),
             nn.PReLU(out_channel),
         )
 
     def forward(self, x):
-        # x = self.pw(x)
+        x = self.conv(x)
         x = self.tconv(x)
         return x
 
