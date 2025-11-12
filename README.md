@@ -1,5 +1,5 @@
 # ACN-TCN
-
+Official PyTorch Implementation of "Lightweight Attentive ConvNeXt-TCN for Causal Target Sound Extraction"
 
 We provide some audio samples here: [Audio samples](https://xiang-m-j.github.io/ACN-TCN-display/)
 
